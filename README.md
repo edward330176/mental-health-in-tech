@@ -26,17 +26,7 @@ With over 1200 responses, this 2014 survey is believed to be the largest survey 
 ## Data Cleaning
 A comparison of the data before and after cleaning.
 
----
-
-## Age Distribution: No Treatment vs Treatment
-
----
-
-## Gender Distribution: No Treatment vs Treatment
-
----
-
-## Gender Distribution in R
+![Comparison](img/comparison.png)
 
 ---
 
@@ -51,6 +41,17 @@ A comparison of the data before and after cleaning.
 ## Result of the Chi-Square Test
 - We fail to reject the null hypothesis for gender, family history, and care options in relation to treatment.
 
+| Column1         | Column2  | Chisquare | Pvalue    | Dof |
+| --------------- | -------- | ---------:| ---------:| ---:|
+| Gender          | treatment|     48.13 | 3.535e-11 |   2 |
+| Self-employed   | treatment|     0.3504|    0.8393 |   2 |
+| Family history  | treatment|     176.5 | 2.86e-40  |   1 |
+| No_employees    | treatment|     8.763 |    0.1189 |   5 |
+| Remote work     | treatment|    0.6903 |    0.406  |   1 |
+| Tech company    | treatment|     1.028 |    0.3105 |   1 |
+| Care options    | treatment|     93.25 | 5.631e-21 |   2 |
+| Age_range       | treatment|     7.211 |    0.1252 |   4 |
+
 ---
 
 ## Logistic Regression Explanation
@@ -59,25 +60,38 @@ A comparison of the data before and after cleaning.
 - **Intercept:** When x is 0, the value of y. For instance, when age = 0, the log(odds of ratio) is -0.597, which corresponds to odds = 0.355.
 - **Age Estimate:** The slope is 0.019. For each one-unit increase in age, the log(odds of ratio) increases by 0.019.
 
+![GLM_AGE](img/glm_age.png)
+
 ---
 
 ## Gender Impact on Treatment
 - **Intercept:** Indicates female. The log(odds of ratio) = 0.746 -> odds = 0.679.
 - **Male Estimate:** -0.931 -> odds of ratio = 0.394. This means that the likelihood of males seeking treatment is about 39% of that for females.
 
----
-
-## Prediction Based on Age and Gender
-Using gender and age alone to predict whether a person will seek treatment does not yield high accuracy, indicating that other factors affect this decision.
+![GLM_AGE](img/glm_gender.png)
 
 ---
 
-## Decision Tree
-- If the respondent said "Yes" to family history, and we proceed to analyze further through the tree.
+## Prediction Based on Age and Gender using logistic regression model
+Accuracy score is 0.616. It means using gender and age alone to predict whether a person will seek treatment does not yield high accuracy, indicating that other factors affect this decision.
 
 ---
 
 ## Random Forest Prediction
+Since the previous logistic regression model indicates that other factors might affect the decision of seeking treatment. We employ a random forest model to efficiently identify which factors might be important. After training the model, we can display the importance of each factor.
+
+| Variable         | MeanDecreaseGini  |
+| ---------------- | ----------------  |
+| Age              | 44.500991         |
+| Self-employed    | 8.652036          |
+| Family history   | 51.521751         |
+| Remote work      | 6.234320          |
+| Tech company     | 4.715678          |
+| Care options     | 40.339015         |
+
+Family history has the highest MeanDecreaseGini value (51.521751), indicating it's the most important factor in the model.
+
+Age and Care options also have high importances (44.500991 & 40.339015), suggesting it significantly influences the model's predictions.
 
 ---
 
@@ -86,5 +100,3 @@ Using gender and age alone to predict whether a person will seek treatment does 
 - A model based on gender and age alone performs poorly (about 0.4 error rate) in predicting treatment-seeking behavior. Other factors, such as family history and care options in the company, likely play a crucial role.
 
 ---
-
-## Questions?
