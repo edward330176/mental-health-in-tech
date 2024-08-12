@@ -1,0 +1,138 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(dplyr)
+library(rpart.plot)
+library(pander)
+library(randomForest)
+```
+
+
+```{r}
+# Read the CSV file
+file_path <- "cleanupSurvey.csv"
+df <- read.csv(file_path, row.names = 1)
+```
+
+Chi-square Test
+```{r}
+# Perform a Chi-square test of independence on each pair of columns
+columns_pairs <- list(
+  c("Gender", "treatment"),
+  c("self_employed", "treatment"),
+  c("family_history", "treatment"),
+  c("no_employees", "treatment"),
+  c("remote_work", "treatment"),
+  c("tech_company",  "treatment"),
+  c("care_options", "treatment"),
+  c("Age_range", "treatment")
+)
+```
+
+```{r}
+results <- data.frame()
+
+for (pair in columns_pairs) {
+  # Create a contingency table
+  contingency_table <- table(df[[pair[1]]], df[[pair[2]]])
+  
+  # Check for low expected frequencies
+  expected <- chisq.test(contingency_table)$expected
+  if (all(expected >= 5)) {
+    # Perform the Chi-square test
+    chi_result <- chisq.test(contingency_table)
+    
+    # Store the results
+    results <- rbind(results, data.frame(
+      Column1 = pair[1],
+      Column2 = pair[2],
+      Chisquare = chi_result$statistic,
+      Pvalue = chi_result$p.value,
+      Dof = chi_result$parameter
+    ))
+  }
+}  
+rownames(results) <- NULL
+pander(results)
+```
+
+Logistic Regression
+```{r}
+set.seed(12345)
+library(ggplot2)
+library(caTools)
+set.seed(12345)
+df <- read.csv("cleanupSurvey.csv", row.names=1)
+```
+
+```{r}
+# Convert "Yes" and "No" to 1's and 0's
+df$treatment <- ifelse(df$treatment == "Yes", 1, 0)
+
+# Telling r "Gender" is a categorical factor
+df$Gender <- as.factor(df$Gender)
+```
+
+```{r}
+# Split data into training set and testing data as 8:2 ratio
+split <- sample.split(df$treatment, SplitRatio=0.8)
+train_set <- subset(df, split == TRUE)
+test_set <- subset(df, split == FALSE)
+```
+
+```{r}
+model_gender = glm(formula = treatment ~ Gender, data = train_set, family = binomial(link="logit"))
+summary(model_gender)
+```
+
+```{r}
+model_age = glm(formula = treatment ~ Age, data = train_set, family = binomial(link="logit"))
+summary(model_age)
+```
+
+```{r}
+model_gender_age = glm(formula = treatment ~ Gender + Age, data = train_set, family = binomial(link="logit"))
+prediction_gender_age <- predict(model_gender_age, newdata=test_set, type="response")
+prediction_gender_age_class <- ifelse(prediction_gender_age > 0.5, 1, 0)
+mean(prediction_gender_age_class == test_set$treatment)
+# Accuracy score is only 0.616, not enough to predict treatment.
+```
+
+Random Forest
+```{r}
+# Select specific columns using dplyr package and store the result in df14a
+df14a = df %>% dplyr::select(Age, self_employed, family_history, treatment, 
+                               remote_work, tech_company, care_options)
+# Build a decision tree model using the rpart package
+tree = rpart(treatment ~ ., method = "class", data = df14a)
+
+# Plot the decision tree using the prp package
+prp(tree)
+```
+
+```{r}
+# Create a new copy of the data frame for random forest modeling
+df14b = df14a
+
+# Convert the "treatment" column to a factor data type
+df14b$treatment = as.factor(df14b$treatment)
+
+# Randomly split the data into training and testing sets using a 70-30 split ratio
+sample = sample.split(df14b$treatment, SplitRatio = 0.7)
+train = subset(df14b, sample == TRUE)
+test = subset(df14b, sample == FALSE)
+
+# Build a random forest model using the randomForest package
+myForest = randomForest(treatment ~ ., data = train)
+
+# Make predictions on the test data using the trained random forest model
+myPredict = predict(myForest, test)
+
+# Display the importance of each predictor in the random forest model
+myForest$importance
+```
+
+```{r}
+# Create a confusion table to compare predictions and actual treatment values
+table(myPredict, test$treatment)
+```
